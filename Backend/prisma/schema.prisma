@@ -1,0 +1,169 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum plan_type {
+  free
+  pro
+}
+
+enum subscription_status {
+  active
+  cancelled
+  past_due
+  trialing
+}
+
+enum scan_status {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum veg_status_type {
+  veg
+  non_veg
+  egg
+  seafood
+  unknown
+}
+
+enum health_badge_type {
+  healthy
+  moderate
+  avoid
+}
+
+model users {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String   @db.VarChar(255)
+  email          String   @unique @db.VarChar(255)
+  password_hash  String?
+  google_id      String?  @unique @db.VarChar(255)
+  avatar_url     String?
+  is_onboarded   Boolean  @default(false)
+  email_verified Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now())
+
+  subscriptions         subscriptions[]
+  scans                 scans[]
+  password_reset_tokens password_reset_tokens[]
+}
+
+model subscriptions {
+  id                     String              @id @default(uuid()) @db.Uuid
+  user_id                String              @db.Uuid
+  plan                   plan_type           @default(free)
+  status                 subscription_status @default(active)
+  stripe_customer_id     String?             @db.VarChar(255)
+  stripe_subscription_id String?             @db.VarChar(255)
+  scans_used             Int                 @default(0)
+  scans_limit            Int?                @default(3)
+  current_period_start   DateTime?
+  current_period_end     DateTime?
+  created_at             DateTime            @default(now())
+  updated_at             DateTime            @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model scans {
+  id              String      @id @default(uuid()) @db.Uuid
+  user_id         String      @db.Uuid
+  restaurant_name String?     @db.VarChar(255)
+  location        String?     @db.VarChar(255)
+  image_url       String
+  image_key       String
+  status          scan_status @default(pending)
+  error_message   String?
+  total_dishes    Int         @default(0)
+  healthy_count   Int         @default(0)
+  moderate_count  Int         @default(0)
+  avoid_count     Int         @default(0)
+  veg_count       Int         @default(0)
+  non_veg_count   Int         @default(0)
+  deleted_at      DateTime?
+  scanned_at      DateTime?
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @default(now())
+
+  user            users             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  dish_results    dish_results[]
+  recommendations recommendations[]
+
+  @@index([user_id, created_at])
+  @@index([user_id, restaurant_name])
+}
+
+model dish_results {
+  id             String            @id @default(uuid()) @db.Uuid
+  scan_id        String            @db.Uuid
+  name           String            @db.VarChar(255)
+  veg_status     veg_status_type   @default(unknown)
+  health_badge   health_badge_type @default(moderate)
+  description    String?
+  cooking_style  String?           @db.VarChar(100)
+  health_reason  String?
+  best_for       String?
+  avoid_if       String?
+  ingredients    Json?
+  health_score   Int?               @db.SmallInt
+  is_recommended Boolean           @default(false)
+  sort_order     Int?
+  created_at     DateTime          @default(now())
+
+  scan            scans             @relation(fields: [scan_id], references: [id], onDelete: Cascade)
+  recommendations recommendations[]
+
+  @@index([scan_id, health_score(sort: Desc)])
+  @@index([scan_id, veg_status])
+  @@index([scan_id, health_badge])
+}
+
+model recommendations {
+  id         String   @id @default(uuid()) @db.Uuid
+  scan_id    String   @db.Uuid
+  dish_id    String   @db.Uuid
+  reason     String
+  rank       Int     @db.SmallInt
+  created_at DateTime @default(now())
+
+  scan scans        @relation(fields: [scan_id], references: [id], onDelete: Cascade)
+  dish dish_results @relation(fields: [dish_id], references: [id], onDelete: Cascade)
+
+  @@unique([scan_id, rank])
+}
+
+model password_reset_tokens {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model stripe_webhook_events {
+  id              String   @id @default(uuid()) @db.Uuid
+  stripe_event_id String   @unique @db.VarChar(255)
+  event_type      String   @db.VarChar(100)
+  payload         Json
+  processed       Boolean  @default(false)
+  created_at      DateTime @default(now())
+}
