@@ -50,15 +50,6 @@ export const incrementScanCount = async (userId: string) => {
   });
 };
 
-export const resetScanCount = async (userId: string) => {
-  await prisma.subscriptions.updateMany({
-    where: { user_id: userId },
-    data: {
-      scans_used: 0,
-    },
-  });
-};
-
 export const upgradeToPro = async (
   userId: string,
   stripeCustomerId: string,
@@ -68,6 +59,7 @@ export const upgradeToPro = async (
     where: { user_id: userId },
     data: {
       plan: "pro",
+      status: "active",
       scans_limit: null,
       stripe_customer_id: stripeCustomerId,
       stripe_subscription_id: stripeSubscriptionId,

@@ -4,14 +4,20 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { verifyIdToken } from "../lib/firebase";
 import { sendPasswordResetEmail } from "./email.service";
-
-const JWT_SECRET = process.env.JWT_SECRET!;
+import { env } from "../config/env";
 
 const generateToken = (userId: string, email: string) => {
-  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ userId, email }, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN as string,
+  } as jwt.SignOptions);
 };
 
 export const signup = async (name: string, email: string, password: string) => {
+  const existing = await prisma.users.findUnique({ where: { email } });
+  if (existing) {
+    throw new Error("Email already registered");
+  }
+
   const hash = await bcrypt.hash(password, 10);
 
   const user = await prisma.users.create({
@@ -33,7 +39,7 @@ export const signup = async (name: string, email: string, password: string) => {
 
   const token = generateToken(user.id, user.email);
 
-  return { token, user };
+  return { token, user: excludePassword(user) };
 };
 
 export const login = async (email: string, password: string) => {
@@ -48,7 +54,7 @@ export const login = async (email: string, password: string) => {
 
   const token = generateToken(user.id, user.email);
 
-  return { token, user };
+  return { token, user: excludePassword(user) };
 };
 
 export const googleAuth = async (idToken: string) => {
@@ -66,7 +72,7 @@ export const googleAuth = async (idToken: string) => {
     if (!user.google_id) {
       user = await prisma.users.update({
         where: { id: user.id },
-        data: { google_id: uid },
+        data: { google_id: uid, email_verified: true },
       });
     }
   } else {
@@ -92,16 +98,18 @@ export const googleAuth = async (idToken: string) => {
 
   const token = generateToken(user.id, user.email);
 
-  return { token, user };
+  return { token, user: excludePassword(user) };
 };
 
 export const forgotPassword = async (email: string) => {
   const user = await prisma.users.findUnique({ where: { email } });
 
   if (!user || !user.password_hash) {
-    throw new Error("User not eligible");
+    // Don't reveal whether user exists — always return success
+    return;
   }
 
+  // Invalidate old tokens for this user
   await prisma.password_reset_tokens.updateMany({
     where: { user_id: user.id, used_at: null },
     data: { used_at: new Date() },
@@ -114,7 +122,7 @@ export const forgotPassword = async (email: string) => {
     data: {
       user_id: user.id,
       token_hash: hash,
-      expires_at: new Date(Date.now() + 3600000),
+      expires_at: new Date(Date.now() + 3600000), // 1 hour
     },
   });
 
@@ -146,10 +154,20 @@ export const resetPassword = async (token: string, newPassword: string) => {
 };
 
 export const getMe = async (userId: string) => {
-  return prisma.users.findUnique({
+  const user = await prisma.users.findUnique({
     where: { id: userId },
     include: {
       subscriptions: true,
     },
   });
+
+  if (!user) throw new Error("User not found");
+
+  return excludePassword(user);
+};
+
+// Helper to strip password_hash from user responses
+const excludePassword = (user: any) => {
+  const { password_hash, ...safe } = user;
+  return safe;
 };

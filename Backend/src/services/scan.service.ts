@@ -1,12 +1,18 @@
 import prisma from "../lib/prisma";
 import { handleUpload } from "./upload.service";
 import { analyzeMenu } from "./ai.service";
+import type { DishFilters } from "../types";
 
 export const createScan = async (userId: string, file: File) => {
   const sub = await prisma.subscriptions.findFirst({
     where: { user_id: userId },
   });
-  if (sub?.scans_limit !== null && sub!.scans_used >= sub!.scans_limit) {
+
+  if (!sub) {
+    throw new Error("Subscription not found");
+  }
+
+  if (sub.scans_limit !== null && sub.scans_used >= sub.scans_limit) {
     throw new Error("Scan limit reached");
   }
 
@@ -20,6 +26,7 @@ export const createScan = async (userId: string, file: File) => {
     },
   });
 
+  // Fire-and-forget: process in background
   processScan(scan.id, imageUrl, userId);
   return scan;
 };
@@ -34,6 +41,7 @@ export const processScan = async (
       where: { id: scanId },
       data: { status: "processing" },
     });
+
     const res = await fetch(imageUrl);
     const buffer = Buffer.from(await res.arrayBuffer());
     const base64 = buffer.toString("base64");
@@ -68,24 +76,34 @@ export const processScan = async (
             avoid_if: d.avoidIf,
             ingredients: d.ingredients,
             health_score: d.healthScore,
-            is_recommended: d.isRecommended,
+            is_recommended: d.isRecommended ?? false,
             sort_order: i,
           },
         });
       }),
     );
 
-    const recommendations = created
-      .filter((d, i) => dishes[i].isRecommended)
-      .slice(0, 5);
+    // BUG FIX: Build recommendations with correct index mapping.
+    // Before: used `dishes[i]` where `i` was the loop index over filtered array,
+    // which grabbed the wrong dish's recommendationReason.
+    // Now: we keep track of the original dish index alongside the created record.
+    const recommendationPairs: { created: any; dish: any }[] = [];
+    for (let i = 0; i < created.length; i++) {
+      if (dishes[i].isRecommended) {
+        recommendationPairs.push({ created: created[i], dish: dishes[i] });
+      }
+    }
 
-    for (let i = 0; i < recommendations.length; i++) {
+    const topRecommendations = recommendationPairs.slice(0, 5);
+
+    let rank = 1;
+    for (const pair of topRecommendations) {
       await prisma.recommendations.create({
         data: {
           scan_id: scanId,
-          dish_id: recommendations[i].id,
-          reason: dishes[i].recommendationReason,
-          rank: i + 1,
+          dish_id: pair.created.id,
+          reason: pair.dish.recommendationReason || pair.dish.healthReason || "Recommended",
+          rank: rank++,
         },
       });
     }
@@ -138,17 +156,20 @@ export const getScanHistory = async (
   limit: number,
   search?: string,
 ) => {
+  const where: any = {
+    user_id: userId,
+    deleted_at: null,
+  };
+
+  if (search) {
+    where.restaurant_name = {
+      contains: search,
+      mode: "insensitive" as const,
+    };
+  }
+
   return prisma.scans.findMany({
-    where: {
-      user_id: userId,
-      deleted_at: null,
-      ...(search && {
-        restaurant_name: {
-          contains: search,
-          mode: "insensitive",
-        },
-      }),
-    },
+    where,
     skip: (page - 1) * limit,
     take: limit,
     orderBy: { created_at: "desc" },
@@ -167,13 +188,17 @@ export const getRecentScans = async (userId: string) => {
   });
 };
 
-export const getDishes = async (scanId: string, filters: any) => {
+export const getDishes = async (scanId: string, filters: DishFilters) => {
+  const where: any = { scan_id: scanId };
+
+  if (filters.vegStatus) where.veg_status = filters.vegStatus;
+  if (filters.badge) where.health_badge = filters.badge;
+
+  const page = Number(filters.page) || 1;
+  const limit = Number(filters.limit) || 20;
+
   return prisma.dish_results.findMany({
-    where: {
-      scan_id: scanId,
-      ...(filters.vegStatus && { veg_status: filters.vegStatus }),
-      ...(filters.badge && { health_badge: filters.badge }),
-    },
+    where,
     orderBy:
       filters.sort === "healthiest"
         ? { health_score: "desc" }
@@ -182,8 +207,8 @@ export const getDishes = async (scanId: string, filters: any) => {
         : filters.sort === "alphabetical"
         ? { name: "asc" }
         : { sort_order: "asc" },
-    skip: (filters.page - 1) * filters.limit,
-    take: filters.limit,
+    skip: (page - 1) * limit,
+    take: limit,
   });
 };
 
@@ -196,6 +221,7 @@ export const getDishDetail = async (dishId: string) => {
 export const getRecommendations = async (scanId: string) => {
   return prisma.recommendations.findMany({
     where: { scan_id: scanId },
+    include: { dish: true },
     orderBy: { rank: "asc" },
   });
 };

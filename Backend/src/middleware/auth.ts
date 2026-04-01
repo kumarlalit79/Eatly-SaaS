@@ -1,13 +1,8 @@
 import type { Context, Next } from "hono";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET not defined");
-}
-
+import { env } from "../config/env";
+import type { JwtPayload } from "../types";
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const header = c.req.header("Authorization");
@@ -17,8 +12,9 @@ export const authMiddleware = async (c: Context, next: Next) => {
   if (!token) {
     return c.json({ error: "Unauthorized" }, 401);
   }
+
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
     const user = await prisma.users.findUnique({
       where: { id: decoded.userId },
     });

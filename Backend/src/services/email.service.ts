@@ -1,11 +1,12 @@
 import { sendMail } from "../lib/nodemailer";
+import { env } from "../config/env";
 
 export const sendPasswordResetEmail = async (
   email: string,
   name: string,
   token: string,
 ) => {
-  const url = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+  const url = `${env.FRONTEND_URL}/reset-password?token=${token}`;
 
   const html = `
     <h2>Hello ${name}</h2>
@@ -18,6 +19,6 @@ export const sendPasswordResetEmail = async (
 };
 
 export const sendWelcomeEmail = async (email: string, name: string) => {
-  const html = `<h2>Welcome ${name} 🎉</h2>`;
-  await sendMail(email, "Welcome", html);
+  const html = `<h2>Welcome ${name} 🎉</h2><p>Thanks for joining Eatly!</p>`;
+  await sendMail(email, "Welcome to Eatly", html);
 };
