@@ -4,6 +4,8 @@ import { ArrowRight, Leaf, HeartPulse, Sparkles } from "lucide-react";
 import heroFood from "@/assets/hero-food.jpg";
 import appMockup from "@/assets/app-mockup.png";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -21,7 +23,10 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-const HeroSection = () => (
+const HeroSection = () => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  return (
   <section className="relative overflow-hidden">
     {/* Background image with overlay */}
     <div className="absolute inset-0">
@@ -62,11 +67,13 @@ const HeroSection = () => (
             className="flex flex-wrap gap-4 pt-2"
             variants={itemVariants}
           >
-            <Button variant="hero" size="lg">
-              Scan a Menu <ArrowRight className="w-4 h-4" />
+            <Button variant="hero" size="lg" asChild>
+              <Link to={isAuthenticated ? "/dashboard" : "/signup"}>
+                Scan a Menu <ArrowRight className="w-4 h-4" />
+              </Link>
             </Button>
-            <Button variant="hero-outline" size="lg">
-              See How It Works
+            <Button variant="hero-outline" size="lg" asChild>
+              <a href="#how-it-works">See How It Works</a>
             </Button>
           </motion.div>
         </motion.div>
@@ -111,6 +118,7 @@ const HeroSection = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default HeroSection;

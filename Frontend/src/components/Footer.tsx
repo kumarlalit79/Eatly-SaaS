@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 
+const socialLinks = [
+  { name: "Twitter", url: "https://x.com/BuiltByArya" },
+  { name: "LinkedIn", url: "https://www.linkedin.com/in/lalitkumar7/" },
+  { name: "Instagram", url: "https://www.instagram.com/_arya.lucky_/?hl=en" },
+];
+
 const footerLinks = [
   {
     title: "Product",
@@ -73,13 +79,15 @@ const Footer = () => (
       <div className="border-t border-primary-foreground/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-xs">© 2026 Eatly. All rights reserved.</p>
         <div className="flex gap-4">
-          {["Twitter", "LinkedIn", "Instagram"].map((s) => (
+          {socialLinks.map((s) => (
             <a
-              key={s}
-              href="#"
+              key={s.name}
+              href={s.url}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-xs hover:text-primary-foreground transition-colors"
             >
-              {s}
+              {s.name}
             </a>
           ))}
         </div>

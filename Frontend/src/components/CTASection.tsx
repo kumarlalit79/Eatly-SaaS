@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -21,7 +23,10 @@ const itemVariants = {
   },
 };
 
-const CTASection = () => (
+const CTASection = () => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  return (
   <section className="section-padding bg-primary overflow-hidden">
     <div className="container-max">
       <motion.div
@@ -50,8 +55,11 @@ const CTASection = () => (
               variant="outline"
               size="lg"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 border-none rounded-pill font-semibold"
+              asChild
             >
-              Start Scanning Now <ArrowRight className="w-4 h-4" />
+              <Link to={isAuthenticated ? "/dashboard" : "/signup"}>
+                Start Scanning Now <ArrowRight className="w-4 h-4" />
+              </Link>
             </Button>
           </motion.div>
         </div>
@@ -65,6 +73,7 @@ const CTASection = () => (
       </motion.div>
     </div>
   </section>
-);
+  );
+};
 
 export default CTASection;

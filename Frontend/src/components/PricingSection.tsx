@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ArrowRight } from "lucide-react";
 import SectionHeader from "@/components/SectionHeader";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
 
 const plans = [
   {
@@ -17,6 +19,7 @@ const plans = [
       "Community support",
     ],
     cta: "Start Free",
+    link: "/signup",
     highlighted: false,
   },
   {
@@ -33,6 +36,7 @@ const plans = [
       "Ad-free experience",
     ],
     cta: "Upgrade to Pro",
+    link: "/signup",
     highlighted: true,
   },
 ];
@@ -56,7 +60,10 @@ const itemVariants = {
   },
 };
 
-const PricingSection = () => (
+const PricingSection = () => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  return (
   <section id="pricing" className="section-padding bg-background">
     <div className="container-max">
       <motion.div
@@ -120,8 +127,19 @@ const PricingSection = () => (
                 variant={p.highlighted ? "hero" : "hero-outline"}
                 size="lg"
                 className="w-full"
+                asChild
               >
-                {p.cta} <ArrowRight className="w-4 h-4" />
+                <Link
+                  to={
+                    isAuthenticated
+                      ? p.name === "Pro"
+                        ? "/upgrade"
+                        : "/dashboard"
+                      : p.link
+                  }
+                >
+                  {p.cta} <ArrowRight className="w-4 h-4" />
+                </Link>
               </Button>
             </motion.div>
           ))}
@@ -129,6 +147,7 @@ const PricingSection = () => (
       </motion.div>
     </div>
   </section>
-);
+  );
+};
 
 export default PricingSection;
