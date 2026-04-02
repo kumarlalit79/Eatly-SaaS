@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 firebase_cred.txt
+
+.env
+.env.*
