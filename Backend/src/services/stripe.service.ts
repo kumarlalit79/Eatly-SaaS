@@ -13,7 +13,7 @@ export const createCheckoutSession = async (userId: string, email: string) => {
         quantity: 1,
       },
     ],
-    success_url: `${env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${env.FRONTEND_URL}/cancel`,
     metadata: {
       userId,

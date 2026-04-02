@@ -41,6 +41,14 @@ export const checkoutSuccess = async (c: any) => {
     return c.json({ error: "session_id required" }, 400);
   }
 
-  const data = await stripeService.handleCheckoutSuccess(sessionId);
-  return c.json(toCamelCase(data));
+  const result = await stripeService.handleCheckoutSuccess(sessionId);
+  
+  // Now fetch the updated subscription from DB to return to frontend
+  const userId = c.get("userId");
+  const subscription = await service.getSubscription(userId);
+
+  return c.json({
+    success: true,
+    subscription: toCamelCase(subscription),
+  });
 };

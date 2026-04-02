@@ -34,7 +34,7 @@ const envSchema = z.object({
 
   // App
   PORT: z.coerce.number().default(3000),
-  FRONTEND_URL: z.string().default("http://localhost:5173"),
+  FRONTEND_URL: z.string().default("http://localhost:8080"),
 });
 
 const parsed = envSchema.safeParse(process.env);
