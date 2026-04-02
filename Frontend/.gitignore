@@ -27,3 +27,10 @@ firebase_cred.txt
 
 .env
 .env.*
+
+# Plans and Artifacts
+*-plan.md
+*.md.resolved
+FE-implementation_plan.md.resolved
+mvp-plan.md
+uiux-plan.md
