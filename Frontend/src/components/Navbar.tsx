@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
 
 const navLinks = [
   { label: "How it Works", href: "#how-it-works" },
@@ -12,6 +13,7 @@ const navLinks = [
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -41,12 +43,20 @@ const Navbar = () => {
 
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Login</Link>
-          </Button>
-          <Button variant="default" size="sm" asChild>
-            <Link to="/signup">Get Started</Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button variant="default" size="sm" asChild>
+              <Link to="/dashboard">Dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button variant="default" size="sm" asChild>
+                <Link to="/signup">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -76,12 +86,20 @@ const Navbar = () => {
             </a>
           ))}
           <div className="flex gap-3 pt-2">
-            <Button variant="ghost" size="sm" className="flex-1" asChild>
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button variant="default" size="sm" className="flex-1" asChild>
-              <Link to="/signup">Get Started</Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button variant="default" size="sm" className="flex-1" onClick={() => setMobileOpen(false)} asChild>
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" className="flex-1" onClick={() => setMobileOpen(false)} asChild>
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button variant="default" size="sm" className="flex-1" onClick={() => setMobileOpen(false)} asChild>
+                  <Link to="/signup">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

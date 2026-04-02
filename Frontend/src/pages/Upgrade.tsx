@@ -122,7 +122,7 @@ const Upgrade = () => {
               </CardTitle>
               <div className="mt-4 mb-2">
                 <span className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                  $9.99
+                  $9
                 </span>
                 <span className="text-gray-500">/month</span>
               </div>
