@@ -32,6 +32,6 @@ export const resetPassword = async (c: any) => {
 
 export const getMe = async (c: any) => {
   const userId = c.get("userId");
-  const user = await service.getMe(userId);
-  return c.json(user);
+  const data = await service.getMe(userId);
+  return c.json(data);
 };

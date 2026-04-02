@@ -1,11 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListChecks, Heart, AlertTriangle, XCircle } from "lucide-react";
+import type { Scan } from "@/types";
 
-const StatsCards = () => {
+interface Props {
+  scan: Scan;
+}
+
+const StatsCards = ({ scan }: Props) => {
   const stats = [
     {
       title: "Total Items",
-      value: "24",
+      value: scan?.totalDishes ?? 0,
       icon: ListChecks,
       color: "text-blue-600",
       bg: "bg-blue-100",
@@ -13,7 +18,7 @@ const StatsCards = () => {
     },
     {
       title: "Healthy Picks",
-      value: "8",
+      value: scan?.healthyCount ?? 0,
       icon: Heart,
       color: "text-green-600",
       bg: "bg-green-100",
@@ -21,7 +26,7 @@ const StatsCards = () => {
     },
     {
       title: "Moderate",
-      value: "10",
+      value: scan?.moderateCount ?? 0,
       icon: AlertTriangle,
       color: "text-amber-600",
       bg: "bg-amber-100",
@@ -29,7 +34,7 @@ const StatsCards = () => {
     },
     {
       title: "Avoid",
-      value: "6",
+      value: scan?.avoidCount ?? 0,
       icon: XCircle,
       color: "text-red-600",
       bg: "bg-red-100",

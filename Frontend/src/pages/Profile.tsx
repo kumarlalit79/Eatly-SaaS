@@ -14,30 +14,63 @@ import {
   CreditCard,
   LogOut,
   User,
-  Mail,
   Shield,
   Calendar,
   Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useProfile } from "@/hooks/useProfile";
+import {
+  useCreateCheckout,
+  useCreatePortal,
+  useUsage,
+} from "@/hooks/useSubscription";
+import { useAuthStore } from "@/stores/authStore";
 
 const Profile = () => {
   const navigate = useNavigate();
 
-  // Mock User Data
-  const user = {
-    name: "Lalit Kumar",
-    email: "lalit@example.com",
-    plan: "Free", // Change to "Pro" to test Pro state
-    joinDate: "October 2023",
-  };
+  const { data, isLoading } = useProfile();
+  const { data: usageRes } = useUsage();
 
-  const isPro = user.plan === "Pro";
+  const checkout = useCreateCheckout();
+  const portal = useCreatePortal();
+
+  const logoutFn = useAuthStore((s) => s.logout);
+
+  const user = data?.data?.user;
+  const subscription = data?.data?.subscription;
+  const usage = usageRes?.data;
+
+  const isPro = subscription?.plan === "PRO";
+
+  const joinDate = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+      })
+    : "";
 
   const handleLogout = () => {
-    // Mock logout logic
+    logoutFn();
     navigate("/login");
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Usage bar percentage (safe division)
+  const usagePercent =
+    usage && usage.scansLimit
+      ? Math.min((usage.scansUsed / usage.scansLimit) * 100, 100)
+      : 0;
 
   return (
     <DashboardLayout>
@@ -54,10 +87,16 @@ const Profile = () => {
                 <div className="mx-auto mb-4 relative">
                   <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
                     <AvatarImage
-                      src="https://github.com/shadcn.png"
-                      alt={user.name}
+                      src={user?.avatarUrl || undefined}
+                      alt={user?.name || "User"}
                     />
-                    <AvatarFallback>LK</AvatarFallback>
+                    <AvatarFallback>
+                      {user?.name
+                        ?.split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase() || "U"}
+                    </AvatarFallback>
                   </Avatar>
                   {isPro && (
                     <div
@@ -68,13 +107,13 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
-                <CardTitle>{user.name}</CardTitle>
-                <CardDescription>{user.email}</CardDescription>
+                <CardTitle>{user?.name || "User"}</CardTitle>
+                <CardDescription>{user?.email}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <User className="w-4 h-4" />
-                  <span>Member since {user.joinDate}</span>
+                  <span>Member since {joinDate}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <Shield className="w-4 h-4" />
@@ -107,7 +146,7 @@ const Profile = () => {
                         : ""
                     }
                   >
-                    {user.plan} Plan
+                    {isPro ? "Pro" : "Free"} Plan
                   </Badge>
                 </div>
               </CardHeader>
@@ -119,7 +158,12 @@ const Profile = () => {
                         Next Renewal
                       </span>
                       <span className="text-sm text-indigo-700 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" /> Nov 19, 2026
+                        <Calendar className="w-3.5 h-3.5" />
+                        {subscription?.currentPeriodEnd
+                          ? new Date(
+                              subscription.currentPeriodEnd,
+                            ).toLocaleDateString()
+                          : "N/A"}
                       </span>
                     </div>
                     <p className="text-sm text-indigo-600">
@@ -135,20 +179,28 @@ const Profile = () => {
                     </p>
                     <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                       <div
-                        className="bg-yellow-500 h-full w-[80%]"
+                        className="bg-yellow-500 h-full"
+                        style={{ width: `${usagePercent}%` }}
                         title="Daily Limit Used"
                       />
                     </div>
                     <p className="text-xs text-muted-foreground text-right">
-                      Daily Limit: 1/1 scans used
+                      Daily Limit: {usage?.scansUsed ?? 0}/
+                      {usage?.scansLimit ?? 0} scans used
                     </p>
                   </div>
                 )}
               </CardContent>
               <CardFooter className="justify-end gap-3 pt-0">
                 {isPro ? (
-                  <Button variant="outline" className="gap-2">
-                    <CreditCard className="w-4 h-4" /> Manage Billing
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => portal.mutate()}
+                    disabled={portal.isPending}
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    {portal.isPending ? "Redirecting..." : "Manage Billing"}
                   </Button>
                 ) : (
                   <Button

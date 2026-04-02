@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Particles } from "@/components/ui/particles";
 import { motion } from "framer-motion";
 import { Camera, Heart, Sparkles, Upload } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { api } from "@/api/client";
 
 const Onboarding = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
       {/* Background Particles */}
@@ -75,13 +77,22 @@ const Onboarding = () => {
             <Button
               size="lg"
               className="h-14 px-8 text-lg rounded-full shadow-lg hover:shadow-primary/25 transition-all"
-              asChild
+              onClick={async () => {
+                try {
+                  await api.patch("/users/onboarding", { isOnboarded: true });
+                  navigate("/upload");
+                } catch (err) {
+                  console.error("Onboarding error", err);
+                }
+              }}
             >
               {/* Link to a dummy dashboard or upload route for now */}
-              <Link to="/dashboard">
+              {/* <Link to="/dashboard">
                 <Upload className="w-5 h-5 mr-2" />
                 Upload Your First Menu
-              </Link>
+              </Link> */}
+              <Upload className="w-5 h-5 mr-2" />
+              Upload Your First Menu
             </Button>
             <p className="mt-4 text-sm text-muted-foreground">
               Takes less than 30 seconds

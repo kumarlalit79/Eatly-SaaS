@@ -1,49 +1,68 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useScan } from "@/hooks/useScans";
+
+const steps = [
+  "Extracting menu text",
+  "Identifying dishes",
+  "Detecting veg/non-veg",
+  "Analyzing health score",
+  "Generating recommendations",
+];
 
 const ProcessingMenu = () => {
   const navigate = useNavigate();
-  const [progress, setProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState(0);
+  const { scanId } = useParams<{ scanId: string }>();
+  const { data, isError } = useScan(scanId!);
+  const scan = data?.data?.scan;
 
-  const steps = [
-    "Extracting menu text",
-    "Identifying dishes",
-    "Detecting veg/non-veg",
-    "Analyzing health score",
-    "Generating recommendations",
-  ];
-
+  // Navigate to results when scan completes
   useEffect(() => {
-    const totalDuration = 15000; // 15 seconds total (simulated)
-    const intervalTime = 100;
-    const stepsCount = steps.length;
-    let elapsed = 0;
+    if (scan?.status === "COMPLETED") {
+      setTimeout(() => navigate(`/results/${scanId}`), 800);
+    }
+  }, [scan?.status, scanId, navigate]);
 
-    const interval = setInterval(() => {
-      elapsed += intervalTime;
-      const newProgress = Math.min((elapsed / totalDuration) * 100, 100);
-      setProgress(newProgress);
+  // Error / Failed state
+  if (isError || scan?.status === "FAILED") {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[80vh]">
+          <div className="text-center space-y-4">
+            <p className="text-red-500 text-lg font-medium">
+              Failed to process menu.
+            </p>
+            <p className="text-muted-foreground">
+              {scan?.errorMessage || "Please try again."}
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-      // Determine current step based on progress
-      const stepIndex = Math.floor((newProgress / 100) * stepsCount);
-      setCurrentStep(Math.min(stepIndex, stepsCount - 1));
+  // Map scan status to progress & step
+  const statusToProgress: Record<string, number> = {
+    PENDING: 15,
+    PROCESSING: 60,
+    COMPLETED: 100,
+    FAILED: 100,
+  };
 
-      if (elapsed >= totalDuration) {
-        clearInterval(interval);
-        setTimeout(() => {
-          navigate("/results");
-        }, 1000);
-      }
-    }, intervalTime);
+  const statusToStep: Record<string, number> = {
+    PENDING: 0,
+    PROCESSING: 2,
+    COMPLETED: 4,
+    FAILED: 4,
+  };
 
-    return () => clearInterval(interval);
-  }, [navigate, steps.length]);
+  const progress = statusToProgress[scan?.status ?? "PENDING"] ?? 15;
+  const currentStep = statusToStep[scan?.status ?? "PENDING"] ?? 0;
 
   return (
     <DashboardLayout>

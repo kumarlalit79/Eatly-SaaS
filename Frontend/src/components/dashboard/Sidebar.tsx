@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Camera,
   History,
-  Heart,
   Crown,
   Settings,
   LogOut,
@@ -12,9 +11,16 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useAuthStore } from "@/stores/authStore";
 
 const SidebarContent = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const logout = useAuthStore((s) => s.logout);
+  const user = useAuthStore((s) => s.user);
+  const subscription = useAuthStore((s) => s.subscription);
+
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
@@ -54,12 +60,31 @@ const SidebarContent = () => {
       </nav>
 
       <div className="p-4 border-t border-[#EBEBEB]">
+        {/* User info */}
+        <div className="mb-3 px-3">
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {user?.name || "User"}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            {user?.email || ""}
+          </p>
+          {subscription?.plan === "PRO" && (
+            <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+              PRO
+            </span>
+          )}
+        </div>
+
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
         >
           <LogOut className="w-5 h-5" />
-          <a href="/">Sign Out</a>
+          Sign Out
         </Button>
       </div>
     </div>

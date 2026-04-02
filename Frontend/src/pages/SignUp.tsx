@@ -4,6 +4,11 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input"; // Assuming Input exists, if not will use standard input
 import { Link } from "react-router-dom";
 import { Mail } from "lucide-react";
+import { useState } from "react";
+import { useSignup, useGoogleAuth } from "@/hooks/useAuth";
+import { signInWithGoogle } from "@/config/firebase";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 // Google Logo SVG component
 const GoogleIcon = () => (
@@ -28,6 +33,17 @@ const GoogleIcon = () => (
 );
 
 const SignUp = () => {
+  const navigate = useNavigate();
+
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { toast } = useToast();
+
+  const signupMutation = useSignup();
+  const googleMutation = useGoogleAuth();
+
   return (
     <AuthLayout
       title="Create an account"
@@ -38,6 +54,39 @@ const SignUp = () => {
           variant="outline"
           className="w-full h-11 bg-background"
           type="button"
+          onClick={async () => {
+            try {
+              const idToken = await signInWithGoogle();
+  
+              googleMutation.mutate(
+                { idToken },
+                {
+                  onSuccess: (res: any) => {
+                    const user = res.data.user;
+                    if (!user.isOnboarded) {
+                      navigate("/onboarding");
+                    } else {
+                      navigate("/dashboard");
+                    }
+                  },
+                  onError: (err: any) => {
+                    toast({
+                      title: "Google Signup Failed",
+                      description: err.response?.data?.error || "Failed to link with backend",
+                      variant: "destructive",
+                    });
+                  }
+                },
+              );
+            } catch (err: any) {
+              console.error(err);
+              toast({
+                title: "Google Error",
+                description: err.message,
+                variant: "destructive",
+              });
+            }
+          }}
         >
           <GoogleIcon />
           Continue with Google
@@ -52,10 +101,56 @@ const SignUp = () => {
           </div>
         </div>
 
-        <Button className="w-full h-11" type="button">
+        <Button
+          className="w-full h-11"
+          type="button"
+          onClick={() => setShowEmailForm(true)}
+        >
           <Mail className="w-4 h-4 mr-2" />
           Continue with Email
         </Button>
+
+        {showEmailForm && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              signupMutation.mutate(
+                { name, email, password },
+                {
+                  onSuccess: () => navigate("/onboarding"),
+                  onError: (err: any) => {
+                    toast({
+                      title: "Signup Failed",
+                      description: err.response?.data?.error || "Error creating account",
+                      variant: "destructive",
+                    });
+                  }
+                },
+              );
+            }}
+            className="grid gap-4"
+          >
+            <Input
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Input
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button disabled={signupMutation.isPending}>
+              {signupMutation.isPending ? "Creating..." : "Create Account"}
+            </Button>
+          </form>
+        )}
 
         <p className="text-xs text-center text-muted-foreground">
           We don’t store your card unless you upgrade.

@@ -21,7 +21,7 @@ export const analyzeMenu = async (base64Image: string) => {
     `;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-3-flash-preview",
     contents: [
       {
         inlineData: {

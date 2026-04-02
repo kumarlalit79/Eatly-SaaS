@@ -19,37 +19,53 @@ import Profile from "./pages/Profile";
 import ErrorDemo from "./pages/ErrorDemo";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import ProtectedRoute from "@/components/layout/ProtectedRoute";
+import { useEffect } from "react";
+import { useAuthStore } from "@/stores/authStore";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/upload" element={<UploadMenu />} />
-          <Route path="/processing" element={<ProcessingMenu />} />
-          <Route path="/results" element={<MenuResults />} />
-          <Route path="/dish/:id" element={<DishDetails />} />
-          <Route path="/history" element={<ScanHistory />} />
-          <Route path="/upgrade" element={<Upgrade />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/error-demo" element={<ErrorDemo />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsConditions />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  useEffect(() => {
+    useAuthStore.getState().initialize();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/login" element={<Login />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/upload" element={<UploadMenu />} />
+              <Route path="/processing/:scanId" element={<ProcessingMenu />} />
+              <Route path="/results/:scanId" element={<MenuResults />} />
+              <Route path="/dish/:scanId/:dishId" element={<DishDetails />} />
+              <Route path="/history" element={<ScanHistory />} />
+              <Route path="/upgrade" element={<Upgrade />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+            </Route>
+
+            <Route path="/error-demo" element={<ErrorDemo />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsConditions />} />
+
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

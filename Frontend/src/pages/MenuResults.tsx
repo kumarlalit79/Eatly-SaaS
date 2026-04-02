@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useScan, useDishes, useRecommendations } from "@/hooks/useScans";
 import {
   Select,
   SelectContent,
@@ -24,54 +26,78 @@ import {
 } from "lucide-react";
 import ErrorState from "@/components/states/ErrorState";
 import { cn } from "@/lib/utils";
+import type { Dish } from "@/types";
 
-import { allItems, MenuItem, HealthStatus } from "@/data/mockData";
+// Map API health badge (HEALTHY/MODERATE/AVOID) to display label
+const badgeLabel = (badge: string) => {
+  switch (badge) {
+    case "HEALTHY": return "Healthy";
+    case "MODERATE": return "Moderate";
+    case "AVOID": return "Avoid";
+    default: return badge;
+  }
+};
+
+// Map API vegStatus to display diet label
+const dietLabel = (vegStatus: string) => {
+  return vegStatus === "VEG" ? "Veg" : "Non-Veg";
+};
 
 const MenuResults = () => {
   const navigate = useNavigate();
-  // Mock Data
-  const scanData = {
-    restaurantName: "The Burger Joint",
-    scanDate: new Date().toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }),
-    totalItems: 24,
-    stats: {
-      healthy: 8,
-      moderate: 10,
-      avoid: 6,
-      veg: 15,
-      nonVeg: 9,
-    },
-  };
+  const { scanId } = useParams<{ scanId: string }>();
 
   // State
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [sortOption, setSortOption] = useState<string>("healthiest");
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
 
-  // Filter Logic
-  const filteredItems = allItems.filter((item) => {
-    if (activeFilter === "All") return true;
-    if (activeFilter === "Veg") return item.diet === "Veg";
-    if (activeFilter === "Non-Veg") return item.diet === "Non-Veg";
-    return item.status === activeFilter;
-  });
+  // Build API filter params from UI filter
+  const filterParams: Record<string, string> = {};
+  if (activeFilter === "Veg") filterParams.vegStatus = "VEG";
+  else if (activeFilter === "Non-Veg") filterParams.vegStatus = "NON_VEG";
+  else if (activeFilter === "Healthy") filterParams.badge = "HEALTHY";
+  else if (activeFilter === "Moderate") filterParams.badge = "MODERATE";
+  else if (activeFilter === "Avoid") filterParams.badge = "AVOID";
 
-  // Sort Logic
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    if (sortOption === "healthiest") return b.healthScore - a.healthScore;
-    if (sortOption === "unhealthiest") return a.healthScore - b.healthScore;
-    if (sortOption === "alphabetical") return a.name.localeCompare(b.name);
-    return 0;
-  });
+  if (sortOption === "healthiest") filterParams.sort = "healthiest";
+  else if (sortOption === "unhealthiest") filterParams.sort = "unhealthiest";
+  else if (sortOption === "alphabetical") filterParams.sort = "alphabetical";
 
-  // Top Recommendations (Top 3 healthiest)
-  const topRecommendations = [...allItems]
-    .sort((a, b) => b.healthScore - a.healthScore)
-    .slice(0, 3);
+  const { data: scanRes } = useScan(scanId!);
+  const { data: dishesRes } = useDishes(scanId!, filterParams);
+  const { data: recRes } = useRecommendations(scanId!);
+
+  const scan = scanRes?.data?.scan;
+  const dishes: Dish[] = dishesRes?.data?.dishes || [];
+  const recommendations = recRes?.data?.recommendations || [];
+
+  const scanData = {
+    restaurantName: scan?.restaurantName || "Unknown",
+    scanDate: scan?.createdAt
+      ? new Date(scan.createdAt).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "",
+    totalItems: scan?.totalDishes || 0,
+    stats: {
+      healthy: scan?.healthyCount || 0,
+      moderate: scan?.moderateCount || 0,
+      avoid: scan?.avoidCount || 0,
+      veg: scan?.vegCount || 0,
+      nonVeg: scan?.nonVegCount || 0,
+    },
+  };
+
+  const topRecommendations = recommendations.slice(0, 3).map((r: any) => ({
+    id: r.dish.id,
+    name: r.dish.name,
+    diet: dietLabel(r.dish.vegStatus),
+    reason: r.reason,
+    healthScore: r.dish.healthScore,
+  }));
 
   return (
     <DashboardLayout>
@@ -180,7 +206,7 @@ const MenuResults = () => {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {topRecommendations.map((item) => (
+            {topRecommendations.map((item: any) => (
               <Card
                 key={`rec-${item.id}`}
                 className="border-green-200 bg-green-50/50 shadow-sm hover:shadow-md transition-all"
@@ -251,8 +277,10 @@ const MenuResults = () => {
 
         {/* Menu Items List */}
         <div className="space-y-4">
-          {sortedItems.length > 0 ? (
-            sortedItems.map((item) => <DishCard key={item.id} item={item} />)
+          {dishes.length > 0 ? (
+            dishes.map((dish) => (
+              <DishCard key={dish.id} dish={dish} scanId={scanId!} />
+            ))
           ) : (
             <div className="py-8">
               <ErrorState
@@ -312,21 +340,19 @@ const SummaryCard = ({
   );
 };
 
-import { useNavigate } from "react-router-dom";
-
-// ... (existing imports)
-
-// ... (inside MenuResults component)
-
 interface DishCardProps {
-  item: MenuItem;
+  dish: Dish;
+  scanId: string;
 }
 
-const DishCard = ({ item }: DishCardProps) => {
+const DishCard = ({ dish, scanId }: DishCardProps) => {
   const navigate = useNavigate();
 
-  const getStatusColor = (status: HealthStatus) => {
-    switch (status) {
+  const diet = dietLabel(dish.vegStatus);
+  const status = badgeLabel(dish.healthBadge);
+
+  const getStatusColor = (s: string) => {
+    switch (s) {
       case "Healthy":
         return "bg-green-100 text-green-800 border-green-200";
       case "Moderate":
@@ -341,14 +367,14 @@ const DishCard = ({ item }: DishCardProps) => {
   return (
     <Card
       className="transition-shadow duration-200 hover:shadow-md cursor-pointer"
-      onClick={() => navigate(`/dish/${item.id}`)}
+      onClick={() => navigate(`/dish/${scanId}/${dish.id}`)}
     >
       <CardContent className="flex flex-col items-start justify-between gap-4 p-5 sm:flex-row sm:items-center">
         <div className="flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h3 className="text-lg font-bold text-gray-900">{item.name}</h3>
+            <h3 className="text-lg font-bold text-gray-900">{dish.name}</h3>
             <div className="flex items-center gap-2">
-              {item.diet === "Veg" ? (
+              {diet === "Veg" ? (
                 <div
                   title="Vegetarian"
                   className="flex h-4 w-4 items-center justify-center border border-green-600 p-[1px]"
@@ -365,16 +391,16 @@ const DishCard = ({ item }: DishCardProps) => {
               )}
               <Badge
                 variant="outline"
-                className={cn("font-medium", getStatusColor(item.status))}
+                className={cn("font-medium", getStatusColor(status))}
               >
-                {item.status}
+                {status}
               </Badge>
             </div>
           </div>
-          <p className="text-gray-600">{item.description}</p>
-          {item.reason && (
+          <p className="text-gray-600">{dish.description}</p>
+          {dish.healthReason && (
             <p className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Info className="h-3 w-3" /> {item.reason}
+              <Info className="h-3 w-3" /> {dish.healthReason}
             </p>
           )}
         </div>
@@ -384,7 +410,7 @@ const DishCard = ({ item }: DishCardProps) => {
           className="shrink-0 gap-1 border-gray-300"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/dish/${item.id}`);
+            navigate(`/dish/${scanId}/${dish.id}`);
           }}
         >
           View Details

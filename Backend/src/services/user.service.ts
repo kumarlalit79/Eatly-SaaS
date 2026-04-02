@@ -1,42 +1,71 @@
 import prisma from "../lib/prisma";
 
+// Reuse the same formatters from auth service
+const formatUser = (user: any) => {
+  const { password_hash, google_id, avatar_url, email_verified, is_onboarded, created_at, updated_at, subscriptions, ...rest } = user;
+  return {
+    ...rest,
+    avatarUrl: avatar_url,
+    emailVerified: email_verified ?? false,
+    isOnboarded: is_onboarded ?? false,
+    createdAt: created_at,
+    updatedAt: updated_at,
+  };
+};
+
+const formatSubscription = (sub: any) => {
+  if (!sub) return null;
+  return {
+    id: sub.id,
+    plan: sub.plan?.toUpperCase() || "FREE",
+    status: sub.status?.toUpperCase() || "ACTIVE",
+    scansUsed: sub.scans_used ?? 0,
+    scansLimit: sub.scans_limit,
+    currentPeriodStart: sub.current_period_start,
+    currentPeriodEnd: sub.current_period_end,
+  };
+};
+
 export const getProfile = async (userId: string) => {
-  return prisma.users.findUnique({
+  const user = await prisma.users.findUnique({
     where: { id: userId },
-    include: {
-      subscriptions: {
-        select: {
-          plan: true,
-          scans_used: true,
-          scans_limit: true,
-          status: true,
-        },
-      },
-    },
+    include: { subscriptions: true },
   });
+
+  if (!user) throw new Error("User not found");
+
+  const sub = user.subscriptions?.[0] || null;
+  return {
+    user: formatUser(user),
+    subscription: formatSubscription(sub),
+  };
 };
 
 export const updateProfile = async (
   userId: string,
   data: {
     name?: string;
-    avatar_url?: string;
+    avatarUrl?: string;
   },
 ) => {
-  return prisma.users.update({
+  const user = await prisma.users.update({
     where: { id: userId },
     data: {
       ...(data.name && { name: data.name }),
-      ...(data.avatar_url && { avatar_url: data.avatar_url }),
+      ...(data.avatarUrl && { avatar_url: data.avatarUrl }),
     },
   });
+
+  return { user: formatUser(user) };
 };
 
 export const completeOnBoarding = async (userId: string) => {
-  return prisma.users.update({
+  const user = await prisma.users.update({
     where: { id: userId },
     data: {
       is_onboarded: true,
     },
   });
+
+  return { user: formatUser(user) };
 };

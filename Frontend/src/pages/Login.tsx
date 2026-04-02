@@ -4,6 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { useLogin, useGoogleAuth } from "@/hooks/useAuth";
+import { signInWithGoogle } from "@/config/firebase";
+import { useAuthStore } from "@/stores/authStore";
+import { useToast } from "@/hooks/use-toast";
 
 // Google Logo SVG component (reused locally for simplicity)
 const GoogleIcon = () => (
@@ -28,6 +33,14 @@ const GoogleIcon = () => (
 );
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { toast } = useToast();
+
+  const loginMutation = useLogin();
+  const googleMutation = useGoogleAuth();
+  const user = useAuthStore((s) => s.user);
+
   const navigate = useNavigate();
   return (
     <AuthLayout
@@ -38,7 +51,29 @@ const Login = () => {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            window.location.href = "/onboarding";
+            // window.location.href = "/onboarding";
+            loginMutation.mutate(
+              { email, password },
+              {
+                onSuccess: (res) => {
+                  console.log("Login Success");
+                  const user = res.data.user;
+                  if (!user.isOnboarded) {
+                    navigate("/onboarding");
+                  } else {
+                    navigate("/dashboard");
+                  }
+                },
+                onError: (err: any) => {
+                  console.error("Login Error", err);
+                  toast({
+                    title: "Login Failed",
+                    description: err.response?.data?.error || "Invalid credentials",
+                    variant: "destructive",
+                  });
+                }
+              },
+            );
           }}
         >
           <div className="grid gap-4">
@@ -51,6 +86,8 @@ const Login = () => {
                 autoCapitalize="none"
                 autoComplete="email"
                 autoCorrect="off"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -63,9 +100,19 @@ const Login = () => {
                   Forgot password?
                 </Link>
               </div>
-              <Input id="password" type="password" />
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <Button className="w-full h-11 mt-2">Login with Email</Button>
+            <Button
+              className="w-full h-11 mt-2"
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? "Logging in.." : "Login with Email"}
+            </Button>
           </div>
         </form>
 
@@ -84,6 +131,39 @@ const Login = () => {
           variant="outline"
           className="w-full h-11 bg-background"
           type="button"
+          onClick={async () => {
+            try {
+              const idToken = await signInWithGoogle();
+  
+              googleMutation.mutate(
+                { idToken },
+                {
+                  onSuccess: (res) => {
+                    const user = res.data.user;
+                    if (!user.isOnboarded) {
+                      navigate("/onboarding");
+                    } else {
+                      navigate("/dashboard");
+                    }
+                  },
+                  onError: (err: any) => {
+                    toast({
+                      title: "Google Login Failed",
+                      description: err.response?.data?.error || "Failed to authenticate with backend",
+                      variant: "destructive",
+                    });
+                  }
+                },
+              );
+            } catch (err: any) {
+              console.error(err);
+              toast({
+                title: "Google Sign In Failed",
+                description: err.message || "Failed to get Google Token",
+                variant: "destructive",
+              });
+            }
+          }}
         >
           <GoogleIcon />
           Google

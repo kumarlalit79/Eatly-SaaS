@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useDishDetail } from "@/hooks/useScans";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -17,15 +18,47 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { allItems, MenuItem, HealthStatus } from "@/data/mockData";
+type HealthStatus = "Healthy" | "Moderate" | "Avoid";
+
+// Map API enum to display string
+const mapBadge = (badge: string): HealthStatus => {
+  switch (badge) {
+    case "HEALTHY": return "Healthy";
+    case "MODERATE": return "Moderate";
+    case "AVOID": return "Avoid";
+    default: return badge as HealthStatus;
+  }
+};
 
 const DishDetails = () => {
-  const { id } = useParams();
+  const { scanId, dishId } = useParams();
   const navigate = useNavigate();
 
-  // Lookup dish by ID, fallback to first item if not found
-  const dishData: MenuItem =
-    allItems.find((item) => item.id === id) || allItems[0];
+  const { data, isLoading } = useDishDetail(scanId!, dishId!);
+  const dish = data?.data?.dish;
+
+  if (isLoading || !dish) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <p className="text-muted-foreground">Loading dish details...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const dishData = {
+    name: dish.name,
+    diet: dish.vegStatus === "VEG" ? "Veg" : "Non-Veg",
+    status: mapBadge(dish.healthBadge),
+    healthScore: dish.healthScore,
+    explanation: dish.description,
+    ingredients: dish.ingredients || [],
+    cookingStyle: dish.cookingStyle ? [dish.cookingStyle] : [],
+    reason: dish.healthReason,
+    bestFor: dish.bestFor ? dish.bestFor.split(",").map((s: string) => s.trim()) : [],
+    avoidIf: dish.avoidIf ? dish.avoidIf.split(",").map((s: string) => s.trim()) : [],
+  };
 
   // Helper to get status color
   const getStatusColor = (status: HealthStatus) => {
@@ -120,7 +153,7 @@ const DishDetails = () => {
                 Ingredients
               </h2>
               <div className="flex flex-wrap gap-2">
-                {dishData.ingredients.map((ing, idx) => (
+                {dishData.ingredients.map((ing: string, idx: number) => (
                   <span
                     key={idx}
                     className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium border border-gray-200"
@@ -140,7 +173,7 @@ const DishDetails = () => {
                 Cooking Style
               </h2>
               <div className="flex flex-wrap gap-2">
-                {dishData.cookingStyle.map((style, idx) => (
+                {dishData.cookingStyle.map((style: string, idx: number) => (
                   <span
                     key={idx}
                     className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium border border-orange-100 flex items-center gap-2"
@@ -183,7 +216,7 @@ const DishDetails = () => {
                     <ThumbsUp className="w-4 h-4" /> Best For
                   </h3>
                   <ul className="space-y-2">
-                    {dishData.bestFor.map((item, idx) => (
+                    {dishData.bestFor.map((item: string, idx: number) => (
                       <li
                         key={idx}
                         className="flex items-start gap-2 text-sm text-gray-600"
@@ -201,7 +234,7 @@ const DishDetails = () => {
                     <ThumbsDown className="w-4 h-4" /> Avoid If
                   </h3>
                   <ul className="space-y-2">
-                    {dishData.avoidIf.map((item, idx) => (
+                    {dishData.avoidIf.map((item: string, idx: number) => (
                       <li
                         key={idx}
                         className="flex items-start gap-2 text-sm text-gray-600"

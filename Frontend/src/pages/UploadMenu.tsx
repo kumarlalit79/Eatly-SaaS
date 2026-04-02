@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, X, Image as ImageIcon, Loader2, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useCreateScan } from "@/hooks/useScans";
 
 const UploadMenu = () => {
   const navigate = useNavigate();
@@ -16,7 +17,6 @@ const UploadMenu = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -72,17 +72,23 @@ const UploadMenu = () => {
     }
   };
 
+  const createScan = useCreateScan();
+
   const handleScan = () => {
     if (!file) return;
-    setIsScanning(true);
 
-    // Simulate scanning delay
-    setTimeout(() => {
-      setIsScanning(false);
-      // Navigate to processing screen
-      navigate("/processing");
-    }, 1000);
+    const formData = new FormData();
+    formData.append("image", file);
+    if (restaurantName) formData.append("restaurantName", restaurantName);
+    createScan.mutate(formData);
   };
+
+  useEffect(() => {
+    if (createScan.isError) {
+      const msg = (createScan.error as any)?.response?.data?.message;
+      toast.error(msg || "Failed to upload menu");
+    }
+  }, [createScan.isError]);
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
@@ -194,9 +200,9 @@ const UploadMenu = () => {
                 size="lg"
                 className="flex-1 text-lg h-12 gap-2 shadow-lg hover:shadow-xl transition-all"
                 onClick={handleScan}
-                disabled={!file || isScanning}
+                disabled={!file || createScan.isPending}
               >
-                {isScanning ? (
+                {createScan.isPending ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     Scanning Menu...
@@ -213,7 +219,7 @@ const UploadMenu = () => {
                 size="lg"
                 className="flex-1 text-lg h-12"
                 onClick={() => navigate(-1)}
-                disabled={isScanning}
+                disabled={createScan.isPending}
               >
                 Cancel
               </Button>

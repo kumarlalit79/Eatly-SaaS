@@ -1,27 +1,30 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Droplets, Dumbbell, AlertOctagon } from "lucide-react";
+import { Droplets, Dumbbell, AlertOctagon, Sparkles } from "lucide-react";
+import type { Recommendation } from "@/types";
 
-const AIInsights = () => {
-  const insights = [
+interface Props {
+  recommendations: Recommendation[];
+}
+
+const AIInsights = ({ recommendations }: Props) => {
+  // Generate insights from real recommendations, fallback to defaults
+  const defaultInsights = [
     {
       icon: Droplets,
-      text: "High oil dishes detected",
+      text: "No insights yet — scan a menu to get started",
       color: "text-blue-500",
       bg: "bg-blue-50",
     },
-    {
-      icon: Dumbbell,
-      text: "3 high-protein meals recommended",
-      color: "text-green-500",
-      bg: "bg-green-50",
-    },
-    {
-      icon: AlertOctagon,
-      text: "Desserts are sugar-heavy",
-      color: "text-orange-500",
-      bg: "bg-orange-50",
-    },
   ];
+
+  const dynamicInsights = recommendations.length > 0
+    ? recommendations.slice(0, 3).map((rec, idx) => ({
+        icon: idx === 0 ? Sparkles : idx === 1 ? Dumbbell : AlertOctagon,
+        text: `${rec.dish?.name}: ${rec.reason}`,
+        color: idx === 0 ? "text-green-500" : idx === 1 ? "text-blue-500" : "text-orange-500",
+        bg: idx === 0 ? "bg-green-50" : idx === 1 ? "bg-blue-50" : "bg-orange-50",
+      }))
+    : defaultInsights;
 
   return (
     <Card className="col-span-3">
@@ -30,7 +33,7 @@ const AIInsights = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {insights.map((insight, index) => (
+          {dynamicInsights.map((insight, index) => (
             <div
               key={index}
               className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"

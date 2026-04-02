@@ -1,27 +1,23 @@
 import * as service from "../services/subscription.service";
 import * as stripeService from "../services/stripe.service";
 import prisma from "../lib/prisma";
+import { toCamelCase } from "../lib/camelCase";
 
 export const getSubscription = async (c: any) => {
   const userId = c.get("userId");
   const data = await service.getSubscription(userId);
-  return c.json(data);
+  return c.json({ subscription: toCamelCase(data) });
 };
 
 export const getUsage = async (c: any) => {
   const userId = c.get("userId");
   const data = await service.getUsage(userId);
-  return c.json(data);
+  return c.json(data); // already camelCase from service
 };
 
 export const createCheckout = async (c: any) => {
   const user = c.get("user");
-
-  const url = await stripeService.createCheckoutSession(
-    user.id,
-    user.email
-  );
-
+  const url = await stripeService.createCheckoutSession(user.id, user.email);
   return c.json({ url });
 };
 
@@ -30,10 +26,11 @@ export const createPortal = async (c: any) => {
     where: { user_id: c.get("userId") },
   });
 
-  const url = await stripeService.createPortalSession(
-    sub!.stripe_customer_id!
-  );
+  if (!sub?.stripe_customer_id) {
+    return c.json({ error: "No billing account found" }, 400);
+  }
 
+  const url = await stripeService.createPortalSession(sub.stripe_customer_id);
   return c.json({ url });
 };
 
@@ -45,6 +42,5 @@ export const checkoutSuccess = async (c: any) => {
   }
 
   const data = await stripeService.handleCheckoutSuccess(sessionId);
-
-  return c.json(data);
+  return c.json(toCamelCase(data));
 };

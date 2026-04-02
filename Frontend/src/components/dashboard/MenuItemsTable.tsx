@@ -7,81 +7,88 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import type { Dish } from "@/types";
 
-const menuItems = [
-  {
-    name: "Margherita Pizza",
-    type: "Vegetarian",
-    score: "Avoid",
-    scoreColor: "destructive",
-    notes: "",
-  },
-  {
-    name: "Grilled Salmon",
-    type: "Non-Veg",
-    score: "Healthy",
-    scoreColor: "success",
-    notes: "",
-  },
-  {
-    name: "Quinoa Salad",
-    type: "Vegetarian",
-    score: "Healthy",
-    scoreColor: "success",
-    notes: "",
-  },
-  {
-    name: "Cheeseburger",
-    type: "Non-Veg",
-    score: "Moderate",
-    scoreColor: "warning",
-    notes: "High in fat",
-  },
-  {
-    name: "Chocolate Cake",
-    type: "Vegetarian",
-    score: "Avoid",
-    scoreColor: "destructive",
-    notes: "High in sugar",
-  },
-];
+interface Props {
+  dishes: Dish[];
+  scanId: string;
+}
 
-const MenuItemsTable = () => {
+const MenuItemsTable = ({ dishes, scanId }: Props) => {
+  const navigate = useNavigate();
+
+  const getBadgeVariant = (badge: string) => {
+    switch (badge) {
+      case "HEALTHY": return "success";
+      case "MODERATE": return "warning";
+      case "AVOID": return "destructive";
+      default: return "secondary";
+    }
+  };
+
+  const getBadgeLabel = (badge: string) => {
+    switch (badge) {
+      case "HEALTHY": return "Healthy";
+      case "MODERATE": return "Moderate";
+      case "AVOID": return "Avoid";
+      default: return badge;
+    }
+  };
+
+  const getTypeLabel = (vegStatus: string) => {
+    return vegStatus === "VEG" ? "Vegetarian" : "Non-Veg";
+  };
+
   return (
-    <div className="rounded-md border bg-white shadow-sm overflow-hidden">
-      <Table>
-        <TableHeader className="bg-gray-50/50">
-          <TableRow>
-            <TableHead className="w-[300px]">Dish Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Health Score</TableHead>
-            <TableHead>Notes</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {menuItems.map((item) => (
-            <TableRow key={item.name}>
-              <TableCell className="font-medium">{item.name}</TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className="font-normal text-muted-foreground bg-gray-100 hover:bg-gray-100"
-                >
-                  {item.type}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant={item.scoreColor as any} className="font-medium">
-                  {item.score}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground font-light">
-                {item.notes}
-              </TableCell>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-800">Menu Items</h3>
+      <div className="rounded-md border bg-white shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader className="bg-gray-50/50">
+            <TableRow>
+              <TableHead className="w-[300px]">Dish Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Health Score</TableHead>
+              <TableHead>Notes</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {dishes.map((dish) => (
+              <TableRow
+                key={dish.id}
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => navigate(`/dish/${scanId}/${dish.id}`)}
+              >
+                <TableCell className="font-medium">{dish.name}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant="secondary"
+                    className="font-normal text-muted-foreground bg-gray-100 hover:bg-gray-100"
+                  >
+                    {getTypeLabel(dish.vegStatus)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getBadgeVariant(dish.healthBadge) as any} className="font-medium">
+                    {getBadgeLabel(dish.healthBadge)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground font-light">
+                  {dish.healthReason || ""}
+                </TableCell>
+              </TableRow>
+            ))}
+            {dishes.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  No dishes to display
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

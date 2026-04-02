@@ -21,22 +21,17 @@ import {
   Edit2,
   Eye,
 } from "lucide-react";
-import { mockScanHistory, ScanHistoryItem } from "@/data/mockData";
+import { useDeleteScan, useScanHistory } from "@/hooks/useScans";
+import type { Scan } from "@/types";
 
 const ScanHistory = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [history, setHistory] = useState<ScanHistoryItem[]>(mockScanHistory);
+  const [search, setSearch] = useState("");
+  const [page] = useState(1);
+  const { data, isLoading } = useScanHistory(search, page);
+  const deleteScan = useDeleteScan();
 
-  // Filter logic
-  const filteredHistory = history.filter((item) =>
-    item.restaurantName.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  // Delete handler (mock)
-  const handleDelete = (id: string) => {
-    setHistory((prev) => prev.filter((item) => item.id !== id));
-  };
+  const scans: Scan[] = data?.data?.scans || [];
 
   return (
     <DashboardLayout>
@@ -58,16 +53,23 @@ const ScanHistory = () => {
             <Input
               placeholder="Search restaurants..."
               className="pl-9 bg-white border-gray-200 focus:border-primary focus:ring-primary"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="col-span-full py-12 text-center">
+            <p className="text-muted-foreground">Loading scans...</p>
+          </div>
+        )}
+
         {/* History List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredHistory.length > 0 ? (
-            filteredHistory.map((scan) => (
+          {!isLoading && scans.length > 0 ? (
+            scans.map((scan) => (
               <Card
                 key={scan.id}
                 className="hover:shadow-md transition-shadow duration-200 border-gray-200"
@@ -77,11 +79,13 @@ const ScanHistory = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
-                        {scan.restaurantName}
+                        {scan.restaurantName || "Untitled Menu"}
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                         <Calendar className="w-3.5 h-3.5" />
-                        <span>{scan.date}</span>
+                        <span>
+                          {new Date(scan.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
 
@@ -96,7 +100,9 @@ const ScanHistory = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate("/results")}>
+                        <DropdownMenuItem
+                          onClick={() => navigate(`/results/${scan.id}`)}
+                        >
                           <Eye className="w-4 h-4 mr-2" /> View Results
                         </DropdownMenuItem>
                         <DropdownMenuItem>
@@ -104,7 +110,7 @@ const ScanHistory = () => {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600 focus:text-red-600"
-                          onClick={() => handleDelete(scan.id)}
+                          onClick={() => deleteScan.mutate(scan.id)}
                         >
                           <Trash2 className="w-4 h-4 mr-2" /> Delete
                         </DropdownMenuItem>
@@ -119,7 +125,7 @@ const ScanHistory = () => {
                         <Utensils className="w-3 h-3" /> Items
                       </div>
                       <div className="font-bold text-gray-900">
-                        {scan.totalItems}
+                        {scan.totalDishes}
                       </div>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-green-50">
@@ -143,14 +149,14 @@ const ScanHistory = () => {
                   {/* Actions */}
                   <Button
                     className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                    onClick={() => navigate("/results")}
+                    onClick={() => navigate(`/results/${scan.id}`)}
                   >
                     View Analysis
                   </Button>
                 </CardContent>
               </Card>
             ))
-          ) : (
+          ) : !isLoading ? (
             <div className="col-span-full py-12 text-center">
               <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search className="w-8 h-8 text-gray-400" />
@@ -159,17 +165,21 @@ const ScanHistory = () => {
                 No scans found
               </h3>
               <p className="text-gray-500 mt-1">
-                Try searching for a different restaurant.
+                {search
+                  ? "Try searching for a different restaurant."
+                  : "Upload your first menu to get started."}
               </p>
-              <Button
-                variant="link"
-                onClick={() => setSearchTerm("")}
-                className="mt-2 text-primary"
-              >
-                Clear Search
-              </Button>
+              {search && (
+                <Button
+                  variant="link"
+                  onClick={() => setSearch("")}
+                  className="mt-2 text-primary"
+                >
+                  Clear Search
+                </Button>
+              )}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </DashboardLayout>

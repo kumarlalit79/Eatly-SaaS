@@ -9,10 +9,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Zap, Star, ShieldCheck, History, Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useCreateCheckout, useSubscription } from "@/hooks/useSubscription";
 
 const Upgrade = () => {
-  const navigate = useNavigate();
+  const checkout = useCreateCheckout();
+  const { data } = useSubscription();
+
+  const plan = data?.data?.subscription?.plan;
+  const isPro = plan === "PRO";
 
   const features = [
     {
@@ -97,8 +101,8 @@ const Upgrade = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full" disabled>
-                Current Plan
+              <Button variant="outline" className="w-full" disabled={!isPro}>
+                {isPro ? "Free Plan" : "Current Plan"}
               </Button>
             </CardFooter>
           </Card>
@@ -139,18 +143,30 @@ const Upgrade = () => {
               ))}
             </CardContent>
             <CardFooter>
-              <Button
-                size="lg"
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
-                onClick={() => {}} // Placeholder for payment logic
-              >
-                Upgrade to Pro
-              </Button>
+              {isPro ? (
+                <Button
+                  size="lg"
+                  className="w-full"
+                  variant="outline"
+                  disabled
+                >
+                  You're on Pro! 🎉
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                  onClick={() => checkout.mutate()}
+                  disabled={checkout.isPending}
+                >
+                  {checkout.isPending ? "Redirecting to Stripe..." : "Upgrade to Pro"}
+                </Button>
+              )}
             </CardFooter>
           </Card>
         </div>
 
-        {/* FAQ or Trust Section (Optional - kept simple for now) */}
+        {/* Trust Section */}
         <div className="text-center pt-10 border-t border-gray-100">
           <p className="text-sm text-gray-500">
             Secure payment powered by Stripe. Cancel anytime.

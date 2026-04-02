@@ -12,6 +12,46 @@ const generateToken = (userId: string, email: string) => {
   } as jwt.SignOptions);
 };
 
+// Convert snake_case DB fields to camelCase for frontend
+const formatUser = (user: any) => {
+  const { password_hash, google_id, avatar_url, email_verified, is_onboarded, created_at, updated_at, subscriptions, ...rest } = user;
+  return {
+    ...rest,
+    avatarUrl: avatar_url,
+    emailVerified: email_verified ?? false,
+    isOnboarded: is_onboarded ?? false,
+    createdAt: created_at,
+    updatedAt: updated_at,
+  };
+};
+
+const formatSubscription = (sub: any) => {
+  if (!sub) return null;
+  return {
+    id: sub.id,
+    plan: sub.plan?.toUpperCase() || "FREE",
+    status: sub.status?.toUpperCase() || "ACTIVE",
+    scansUsed: sub.scans_used ?? 0,
+    scansLimit: sub.scans_limit,
+    currentPeriodStart: sub.current_period_start,
+    currentPeriodEnd: sub.current_period_end,
+  };
+};
+
+const getUserWithSubscription = async (userId: string) => {
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    include: { subscriptions: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  const sub = user.subscriptions?.[0] || null;
+  return {
+    user: formatUser(user),
+    subscription: formatSubscription(sub),
+  };
+};
+
 export const signup = async (name: string, email: string, password: string) => {
   const existing = await prisma.users.findUnique({ where: { email } });
   if (existing) {
@@ -38,8 +78,9 @@ export const signup = async (name: string, email: string, password: string) => {
   });
 
   const token = generateToken(user.id, user.email);
+  const { user: formattedUser, subscription } = await getUserWithSubscription(user.id);
 
-  return { token, user: excludePassword(user) };
+  return { token, user: formattedUser, subscription };
 };
 
 export const login = async (email: string, password: string) => {
@@ -53,8 +94,9 @@ export const login = async (email: string, password: string) => {
   if (!match) throw new Error("Invalid credentials");
 
   const token = generateToken(user.id, user.email);
+  const { user: formattedUser, subscription } = await getUserWithSubscription(user.id);
 
-  return { token, user: excludePassword(user) };
+  return { token, user: formattedUser, subscription };
 };
 
 export const googleAuth = async (idToken: string) => {
@@ -97,19 +139,18 @@ export const googleAuth = async (idToken: string) => {
   }
 
   const token = generateToken(user.id, user.email);
+  const { user: formattedUser, subscription } = await getUserWithSubscription(user.id);
 
-  return { token, user: excludePassword(user) };
+  return { token, user: formattedUser, subscription };
 };
 
 export const forgotPassword = async (email: string) => {
   const user = await prisma.users.findUnique({ where: { email } });
 
   if (!user || !user.password_hash) {
-    // Don't reveal whether user exists — always return success
     return;
   }
 
-  // Invalidate old tokens for this user
   await prisma.password_reset_tokens.updateMany({
     where: { user_id: user.id, used_at: null },
     data: { used_at: new Date() },
@@ -122,7 +163,7 @@ export const forgotPassword = async (email: string) => {
     data: {
       user_id: user.id,
       token_hash: hash,
-      expires_at: new Date(Date.now() + 3600000), // 1 hour
+      expires_at: new Date(Date.now() + 3600000),
     },
   });
 
@@ -154,20 +195,5 @@ export const resetPassword = async (token: string, newPassword: string) => {
 };
 
 export const getMe = async (userId: string) => {
-  const user = await prisma.users.findUnique({
-    where: { id: userId },
-    include: {
-      subscriptions: true,
-    },
-  });
-
-  if (!user) throw new Error("User not found");
-
-  return excludePassword(user);
-};
-
-// Helper to strip password_hash from user responses
-const excludePassword = (user: any) => {
-  const { password_hash, ...safe } = user;
-  return safe;
+  return await getUserWithSubscription(userId);
 };

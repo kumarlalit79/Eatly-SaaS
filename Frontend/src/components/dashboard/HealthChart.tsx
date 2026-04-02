@@ -7,15 +7,35 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { Scan } from "@/types";
 
-const data = [
-  { name: "Starters", healthy: 4, moderate: 3, avoid: 1 },
-  { name: "Mains", healthy: 3, moderate: 5, avoid: 4 },
-  { name: "Desserts", healthy: 1, moderate: 2, avoid: 1 },
-  { name: "Drinks", healthy: 5, moderate: 1, avoid: 0 },
-];
+interface Props {
+  scan: Scan;
+}
 
-const HealthChart = () => {
+const HealthChart = ({ scan }: Props) => {
+  // Build chart data from scan counts
+  const data = [
+    {
+      name: "Healthy",
+      healthy: scan?.healthyCount ?? 0,
+      moderate: 0,
+      avoid: 0,
+    },
+    {
+      name: "Moderate",
+      healthy: 0,
+      moderate: scan?.moderateCount ?? 0,
+      avoid: 0,
+    },
+    {
+      name: "Avoid",
+      healthy: 0,
+      moderate: 0,
+      avoid: scan?.avoidCount ?? 0,
+    },
+  ];
+
   return (
     <Card className="col-span-4 shadow-sm">
       <CardHeader>
@@ -82,15 +102,15 @@ const HealthChart = () => {
         <div className="flex justify-center gap-6 mt-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-600" />
-            <span>Healthy</span>
+            <span>Healthy ({scan?.healthyCount ?? 0})</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-amber-600" />
-            <span>Moderate</span>
+            <span>Moderate ({scan?.moderateCount ?? 0})</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-600" />
-            <span>Avoid</span>
+            <span>Avoid ({scan?.avoidCount ?? 0})</span>
           </div>
         </div>
       </CardContent>
