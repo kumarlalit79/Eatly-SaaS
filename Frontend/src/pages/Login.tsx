@@ -10,7 +10,7 @@ import { signInWithGoogle } from "@/config/firebase";
 import { useAuthStore } from "@/stores/authStore";
 import { useToast } from "@/hooks/use-toast";
 
-// Google Logo SVG component (reused locally for simplicity)
+
 const GoogleIcon = () => (
   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
     <path
@@ -51,7 +51,7 @@ const Login = () => {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            // window.location.href = "/onboarding";
+            
             loginMutation.mutate(
               { email, password },
               {

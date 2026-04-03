@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Utensils, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Hardcoded data for now
+
 const RECENT_SCANS = [
   {
     id: 1,

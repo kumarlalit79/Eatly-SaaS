@@ -1,6 +1,6 @@
 import prisma from "../lib/prisma";
 
-// Reuse the same formatters from auth service
+
 const formatUser = (user: any) => {
   const { password_hash, google_id, avatar_url, email_verified, is_onboarded, created_at, updated_at, subscriptions, ...rest } = user;
   return {

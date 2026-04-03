@@ -12,7 +12,7 @@ const generateToken = (userId: string, email: string) => {
   } as jwt.SignOptions);
 };
 
-// Convert snake_case DB fields to camelCase for frontend
+
 const formatUser = (user: any) => {
   const { password_hash, google_id, avatar_url, email_verified, is_onboarded, created_at, updated_at, subscriptions, ...rest } = user;
   return {

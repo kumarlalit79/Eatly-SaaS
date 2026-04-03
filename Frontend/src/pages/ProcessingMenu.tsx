@@ -21,14 +21,14 @@ const ProcessingMenu = () => {
   const { data, isError } = useScan(scanId!);
   const scan = data?.data?.scan;
 
-  // Navigate to results when scan completes
+  
   useEffect(() => {
     if (scan?.status === "COMPLETED") {
       setTimeout(() => navigate(`/results/${scanId}`), 800);
     }
   }, [scan?.status, scanId, navigate]);
 
-  // Error / Failed state
+  
   if (isError || scan?.status === "FAILED") {
     return (
       <DashboardLayout>
@@ -46,7 +46,7 @@ const ProcessingMenu = () => {
     );
   }
 
-  // Map scan status to progress & step
+  
   const statusToProgress: Record<string, number> = {
     PENDING: 15,
     PROCESSING: 60,

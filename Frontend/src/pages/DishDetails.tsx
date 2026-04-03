@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 type HealthStatus = "Healthy" | "Moderate" | "Avoid";
 
-// Map API enum to display string
+
 const mapBadge = (badge: string): HealthStatus => {
   switch (badge) {
     case "HEALTHY": return "Healthy";
@@ -60,7 +60,7 @@ const DishDetails = () => {
     avoidIf: dish.avoidIf ? dish.avoidIf.split(",").map((s: string) => s.trim()) : [],
   };
 
-  // Helper to get status color
+  
   const getStatusColor = (status: HealthStatus) => {
     switch (status) {
       case "Healthy":

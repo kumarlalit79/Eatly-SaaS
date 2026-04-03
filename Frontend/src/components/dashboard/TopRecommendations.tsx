@@ -7,7 +7,7 @@ interface Props {
 }
 
 const TopRecommendations = ({ recommendations }: Props) => {
-  // Map API recommendations to display format
+  
   const displayItems = recommendations.slice(0, 3).map((rec) => {
     const badge = rec.dish?.healthBadge === "HEALTHY" ? "Healthy"
       : rec.dish?.healthBadge === "MODERATE" ? "Moderate" : "Avoid";

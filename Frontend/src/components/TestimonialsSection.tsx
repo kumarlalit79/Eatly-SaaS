@@ -7,7 +7,7 @@ import {
   Testimonial,
 } from "@/components/ui/testimonials-columns-1";
 
-// Existing testimonials + new ones to fill columns
+
 const testimonialsData: Testimonial[] = [
   {
     image: avatar1,

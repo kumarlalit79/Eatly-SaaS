@@ -16,6 +16,6 @@ export const errorHandler = (err: Error, c: Context) => {
     return c.json({ error: err.message }, err.statusCode as any);
   }
 
-  // Also return standard built-in errors for now (e.g. "Email already registered")
+  
   return c.json({ error: err.message || "Internal server error" }, 500);
 };

@@ -7,7 +7,7 @@ interface Props {
 }
 
 const AIInsights = ({ recommendations }: Props) => {
-  // Generate insights from real recommendations, fallback to defaults
+  
   const defaultInsights = [
     {
       icon: Droplets,

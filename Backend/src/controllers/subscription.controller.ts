@@ -12,7 +12,7 @@ export const getSubscription = async (c: any) => {
 export const getUsage = async (c: any) => {
   const userId = c.get("userId");
   const data = await service.getUsage(userId);
-  return c.json(data); // already camelCase from service
+  return c.json(data); 
 };
 
 export const createCheckout = async (c: any) => {
@@ -43,7 +43,7 @@ export const checkoutSuccess = async (c: any) => {
 
   const result = await stripeService.handleCheckoutSuccess(sessionId);
   
-  // Now fetch the updated subscription from DB to return to frontend
+  
   const userId = c.get("userId");
   const subscription = await service.getSubscription(userId);
 

@@ -26,7 +26,7 @@ export const createScan = async (userId: string, file: File) => {
     },
   });
 
-  // Fire-and-forget: process in background
+  
   processScan(scan.id, imageUrl, userId);
   return scan;
 };
@@ -83,10 +83,7 @@ export const processScan = async (
       }),
     );
 
-    // BUG FIX: Build recommendations with correct index mapping.
-    // Before: used `dishes[i]` where `i` was the loop index over filtered array,
-    // which grabbed the wrong dish's recommendationReason.
-    // Now: we keep track of the original dish index alongside the created record.
+   
     const recommendationPairs: { created: any; dish: any }[] = [];
     for (let i = 0; i < created.length; i++) {
       if (dishes[i].isRecommended) {

@@ -9,7 +9,7 @@ export interface MenuItem {
   status: HealthStatus;
   healthScore: number; // 1-100
   reason?: string;
-  // Extended details
+  
   explanation: string;
   ingredients: string[];
   cookingStyle: string[];

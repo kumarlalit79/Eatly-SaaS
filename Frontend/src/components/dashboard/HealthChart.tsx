@@ -14,7 +14,7 @@ interface Props {
 }
 
 const HealthChart = ({ scan }: Props) => {
-  // Build chart data from scan counts
+  
   const data = [
     {
       name: "Healthy",

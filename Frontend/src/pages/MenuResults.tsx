@@ -28,7 +28,7 @@ import ErrorState from "@/components/states/ErrorState";
 import { cn } from "@/lib/utils";
 import type { Dish } from "@/types";
 
-// Map API health badge (HEALTHY/MODERATE/AVOID) to display label
+
 const badgeLabel = (badge: string) => {
   switch (badge) {
     case "HEALTHY": return "Healthy";
@@ -38,7 +38,7 @@ const badgeLabel = (badge: string) => {
   }
 };
 
-// Map API vegStatus to display diet label
+
 const dietLabel = (vegStatus: string) => {
   return vegStatus === "VEG" ? "Veg" : "Non-Veg";
 };
@@ -47,12 +47,12 @@ const MenuResults = () => {
   const navigate = useNavigate();
   const { scanId } = useParams<{ scanId: string }>();
 
-  // State
+  
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [sortOption, setSortOption] = useState<string>("healthiest");
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
 
-  // Build API filter params from UI filter
+  
   const filterParams: Record<string, string> = {};
   if (activeFilter === "Veg") filterParams.vegStatus = "VEG";
   else if (activeFilter === "Non-Veg") filterParams.vegStatus = "NON_VEG";
@@ -298,7 +298,7 @@ const MenuResults = () => {
   );
 };
 
-// --- Sub-components ---
+
 
 interface SummaryCardProps {
   title: string;

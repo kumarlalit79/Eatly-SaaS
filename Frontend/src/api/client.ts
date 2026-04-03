@@ -22,7 +22,7 @@ api.interceptors.response.use(
       const logout = useAuthStore.getState().logout;
       logout();
 
-      // Only redirect if we are not already on auth pages
+      
       const path = window.location.pathname;
       if (path !== "/login" && path !== "/signup" && path !== "/") {
         window.location.href = "/login";

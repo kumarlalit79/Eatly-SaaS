@@ -28,13 +28,13 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.2, // Stagger effect for children
+      staggerChildren: 0.2,  
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 }, // Fade in Up effect
+  hidden: { opacity: 0, y: 30 }, 
   visible: {
     opacity: 1,
     y: 0,

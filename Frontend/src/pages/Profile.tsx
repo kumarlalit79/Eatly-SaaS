@@ -66,7 +66,7 @@ const Profile = () => {
     );
   }
 
-  // Usage bar percentage (safe division)
+  
   const usagePercent =
     usage && usage.scansLimit
       ? Math.min((usage.scansUsed / usage.scansLimit) * 100, 100)

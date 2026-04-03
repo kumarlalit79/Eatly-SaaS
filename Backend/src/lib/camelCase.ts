@@ -1,7 +1,4 @@
-/**
- * Recursively converts snake_case object keys to camelCase.
- * Also uppercases known enum values (status, plan, healthBadge, vegStatus).
- */
+
 
 const UPPERCASE_FIELDS = new Set(["status", "plan", "healthBadge", "vegStatus", "health_badge", "veg_status"]);
 
@@ -16,7 +13,7 @@ export const toCamelCase = (obj: any): any => {
     const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
     let value = obj[key];
 
-    // Uppercase enum string values for known fields
+    
     if (UPPERCASE_FIELDS.has(key) && typeof value === "string") {
       value = value.toUpperCase();
     }

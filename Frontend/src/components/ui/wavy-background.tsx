@@ -92,7 +92,7 @@ export const WavyBackground = ({
   useEffect(() => {
     init();
     return () => {
-      // Cleanup if needed, though canvas redraws over itself
+      
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

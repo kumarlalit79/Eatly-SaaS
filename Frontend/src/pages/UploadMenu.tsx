@@ -51,7 +51,7 @@ const UploadMenu = () => {
       return;
     }
 
-    // cleanup previous preview
+    
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
