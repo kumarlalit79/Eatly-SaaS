@@ -2,8 +2,7 @@
 > AI-powered smart menu analyzer that translates, detects dietary restrictions, and provides health ratings for restaurant dishes worldwide.
 
 ## 🔗 Demo
-<!-- Add live link or demo video here -->
-> 
+[![Eatly Demo Video](https://img.youtube.com/vi/pRQjLgnm-l0/maxresdefault.jpg)](https://youtu.be/pRQjLgnm-l0)
 
 ## 📋 Description
 Eatly solves the anxiety and confusion of dining in unfamiliar places by using AI to decode complex or foreign restaurant menus. Travelers and people with strict dietary restrictions (like vegans, or those avoiding specific meats like beef) use Eatly to instantly scan a menu and understand exactly what is in a dish. Built with a ridiculously fast Bun/Hono backend and an interactive React frontend, Eatly acts as a pocket translator and personal nutritionist.
