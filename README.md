@@ -2,6 +2,8 @@
 > AI-powered smart menu analyzer that translates, detects dietary restrictions, and provides health ratings for restaurant dishes worldwide.
 
 ## 🔗 Demo
+> 🍿 **Click the image below to watch the full Eatly demo video!**
+
 [![Eatly Demo Video](https://img.youtube.com/vi/pRQjLgnm-l0/maxresdefault.jpg)](https://youtu.be/pRQjLgnm-l0)
 
 ## 📋 Description
